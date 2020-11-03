@@ -30,8 +30,8 @@ fn main() {
                     if n == 0 {
                         std::process::exit(0x0000);
                     }
-                    let reply: Vec<&str> = from_utf8(&data).unwrap().lines().collect();
-                    events = reply;
+                    let mut reply: Vec<&str> = from_utf8(&data[0..n]).unwrap().lines().collect();
+                    events.append(&mut reply);
                 }
                 Err(e) => {
                     println!("Failed to receive data: {}", e);
@@ -43,9 +43,6 @@ fn main() {
         }
     }
     for event in events.iter() {
-        if event.len() == 1268 {
-            continue;
-        }
         let mut splitter = event.splitn(2, ',');
         let first = splitter.next().unwrap();
         let mut second: String = splitter.next().unwrap().to_owned();
