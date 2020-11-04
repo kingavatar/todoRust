@@ -1,0 +1,11 @@
+branch: true
+ignore-not-existing: true
+filter: covered
+llvm: true
+output-type: lcov
+output-path: ./lcov.info
+prefix-dir: /home/user/build/
+ignore:
+  - "/*"
+  - "C:/*"
+  - "../*"
