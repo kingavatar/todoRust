@@ -8,23 +8,20 @@ fn main() {
     let mut term = false;
     let mut conky = false;
     let args: Vec<String> = env::args().collect();
-    match args.len() {
-        2 => {
-            let query = &args[1];
-            match &query[..] {
-                "term" | "terminal" => term = true,
-                "conky" => conky = true,
-                _ => {}
-            }
+    if let 2 = args.len() {
+        let query = &args[1];
+        match &query[..] {
+            "term" | "terminal" => term = true,
+            "conky" => conky = true,
+            _ => {}
         }
-        _ => {}
     }
     let mut events: Vec<&str> = Vec::new();
     let mut data = [0u8; 1512];
     match TcpStream::connect("localhost:9977") {
         Ok(mut stream) => {
             let msg = b"events";
-            stream.write(msg).unwrap();
+            stream.write_all(msg).unwrap();
             match stream.read(&mut data) {
                 Ok(n) => {
                     if n == 0 {
