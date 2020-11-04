@@ -23,16 +23,16 @@ jobs:
         include:
           - name: linux
             os: ubuntu-latest
-            artifact_name: target/release/<name>
-            asset_name: <name>-linux
+            artifact_name: target/release/todo
+            asset_name: todo-linux
           - name: windows
             os: windows-latest
-            artifact_name: target/release/<name>.exe
-            asset_name: <name>-windows
+            artifact_name: target/release/todo.exe
+            asset_name: todo-windows
           - name: macos
             os: macos-latest
-            artifact_name: target/release/<name>
-            asset_name: <name>-macos
+            artifact_name: target/release/todo
+            asset_name: todo-macos
 
     steps:
     - uses: actions/checkout@v2.3.4 
