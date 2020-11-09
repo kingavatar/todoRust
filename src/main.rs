@@ -1,10 +1,10 @@
 use chrono::{DateTime, TimeZone, Utc};
+use colored::Colorize;
 use filebuffer::FileBuffer;
 use std::env;
 use std::io::{stdin, stdout, BufWriter, Read, Write};
 use std::net::TcpStream;
 use std::str::from_utf8;
-use colored::Colorize;
 
 fn main() {
     // term variable to set term color output
@@ -24,18 +24,22 @@ fn main() {
             "add" => {
                 let mut task = String::new();
                 let mut deadline = String::new();
-                print!("{} {} ","==>".green().bold(),"Enter a task >>".bold());
+                print!("{} {} ", "==>".green().bold(), "Enter a task >>".bold());
                 let _ = stdout().flush();
                 stdin().read_line(&mut task).unwrap();
                 task = task.trim().to_string();
-                print!("{} {} ","==>".green().bold(),"Enter a Deadline[dd/mm/yyyy HH:MM] >>".bold());
+                print!(
+                    "{} {} ",
+                    "==>".green().bold(),
+                    "Enter a Deadline[dd/mm/yyyy HH:MM] >>".bold()
+                );
                 let _ = stdout().flush();
                 stdin().read_line(&mut deadline).unwrap();
                 deadline = deadline.trim().to_string();
                 let date = Utc.datetime_from_str(deadline.trim(), "%d/%m/%Y %H:%M");
                 match date {
                     Err(e) => {
-                        println!("{} {:?}","Invalid DateTime Format".red().bold(), e);
+                        println!("{} {:?}", "Invalid DateTime Format".red().bold(), e);
                         std::process::exit(1);
                     }
                     _ => (),
@@ -46,7 +50,7 @@ fn main() {
             }
             "remove" => {
                 let mut task = String::new();
-                print!("{} {} ","==>".green().bold(),"Enter a task >>".bold());
+                print!("{} {} ", "==>".green().bold(), "Enter a task >>".bold());
                 let _ = stdout().flush();
                 stdin()
                     .read_line(&mut task)
@@ -116,28 +120,22 @@ fn get_events(events: &mut Vec<String>) {
                     events.extend(reply);
                 }
                 Err(e) => {
-                    println!("{}: {}","Failed to receive data".red().bold(), e);
+                    println!("{}: {}", "Failed to receive data".red().bold(), e);
                 }
             }
         }
         Err(e) => {
-            println!("{}:{}","Failed to connect".red().bold(), e);
+            println!("{}:{}", "Failed to connect".red().bold(), e);
         }
     }
 }
 
 // Get events from tasks file
 fn get_tasks(tasks: &mut Vec<String>) {
-    let task_file = FileBuffer::open(&shellexpand::tilde("~/.tasks").to_string());
-    match task_file {
-        Err(_) => {
-            let _file = std::fs::OpenOptions::new()
-                .write(false)
-                .create_new(true)
-                .open(&shellexpand::tilde("~/.tasks").to_string());
-        }
-        _ => (),
-    }
+    let _file = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&shellexpand::tilde("~/.tasks").to_string());
     let task_file = FileBuffer::open(&shellexpand::tilde("~/.tasks").to_string()).unwrap();
     let tasks_string = String::from_utf8(task_file[..].to_vec()).expect("not valid UTF-8");
     let list_of_tasks: Vec<String> = tasks_string.lines().map(String::from).collect();
@@ -151,7 +149,7 @@ fn add_tasks(task: &str, deadline: &DateTime<chrono::FixedOffset>) {
     let mut task_writer = BufWriter::new(task_file);
     match write!(task_writer, "{},{}", task, deadline.to_rfc3339()) {
         Err(e) => println!("{:?}", e.to_string().red().bold()),
-        _ => println!("{} {}","Added task".bold(),task),
+        _ => println!("{} {}", "Added task".bold(), task),
     };
 }
 
@@ -164,7 +162,8 @@ fn add_tasks_list(tasks: &mut Vec<String>) {
         let mut splitter = ele.splitn(2, ',');
         let task = splitter.next().unwrap();
         let deadline: String = splitter.next().unwrap().to_owned();
-        let date: DateTime<chrono::FixedOffset> = DateTime::parse_from_rfc3339(deadline.trim()).expect("Wrong datetime Format not adding task");
+        let date: DateTime<chrono::FixedOffset> = DateTime::parse_from_rfc3339(deadline.trim())
+            .expect("Wrong datetime Format not adding task");
         add_tasks(&task, &date);
     }
 }
@@ -174,27 +173,50 @@ fn remove_tasks(task: &str, tasks: &mut Vec<String>) {
         .filter(|x| x.split(',').next().unwrap() == task)
         .count();
     if idx != 0 {
-        println!("{} {}: {}","No of Tasks Found containing".bold(), task, idx);
+        println!(
+            "{} {}: {}",
+            "No of Tasks Found containing".bold(),
+            task,
+            idx
+        );
         if idx > 1 {
             let query = yes_or_no("Remove All");
             if query {
                 tasks.retain(|x| x.split(',').next().unwrap() != task);
                 add_tasks_list(tasks);
-                println!("{} {}","Removed all tasks containing".bold(),task);
+                println!("{} {}", "Removed all tasks containing".bold(), task);
             } else {
-                println!("{} {} {} up to 10","::".cyan().bold(),"Showing tasks containing".bold(), task);
-                println!("{} {}","::".cyan().bold(),"Removing selected tasks...".bold());
-                println!("{} {}","Removed all selected tasks containing".bold(),task);
+                println!(
+                    "{} {} {} up to 10",
+                    "::".cyan().bold(),
+                    "Showing tasks containing".bold(),
+                    task
+                );
+                println!(
+                    "{} {}",
+                    "::".cyan().bold(),
+                    "Removing selected tasks...".bold()
+                );
+                println!(
+                    "{} {}",
+                    "Removed all selected tasks containing".bold(),
+                    task
+                );
             }
         }
     } else {
-        println!("{}","Not Found".red().bold());
+        println!("{}", "Not Found".red().bold());
     }
 }
 
 fn yes_or_no<S: ToString>(prompt: S) -> bool {
     let mut buf = String::new();
-    print!("{} {} [Y y] {} ","==>".green().bold() ,prompt.to_string().bold(),">>".bold());
+    print!(
+        "{} {} [Y y] {} ",
+        "==>".green().bold(),
+        prompt.to_string().bold(),
+        ">>".bold()
+    );
     let _ = stdout().flush();
     stdin()
         .read_line(&mut buf)
@@ -208,10 +230,14 @@ fn print_duration(duration: chrono::Duration, term: bool, conky: bool, first: &s
         if term {
             println!(
                 "{}, {} {} {}",
-                first.truecolor(250,169,22).bold(),
+                first.truecolor(250, 169, 22).bold(),
                 "remaining days to do are",
-                duration.num_days().to_string().truecolor(104,161,223).bold(),
-                "days".truecolor(104,161,223).bold()
+                duration
+                    .num_days()
+                    .to_string()
+                    .truecolor(104, 161, 223)
+                    .bold(),
+                "days".truecolor(104, 161, 223).bold()
             );
         } else if conky {
             println!(
@@ -228,7 +254,11 @@ fn print_duration(duration: chrono::Duration, term: bool, conky: bool, first: &s
         }
     } else if duration.num_days() >= 1 {
         if term {
-            println!("{}, to be done {}", first.truecolor(250,169,22).bold(),"Today".red().bold());
+            println!(
+                "{}, to be done {}",
+                first.truecolor(250, 169, 22).bold(),
+                "Today".red().bold()
+            );
         } else if conky {
             println!(
                 "${{#FAA916}}{},${{#FBFFFE}} to be done ${{#FF0000}}Today${{#FBFFFE}}",
@@ -237,9 +267,13 @@ fn print_duration(duration: chrono::Duration, term: bool, conky: bool, first: &s
         } else {
             println!("{}, to be done Today", first);
         }
-    } else{
+    } else {
         if term {
-            println!("{}, {}", first.truecolor(250,169,22).bold(),"is past Due".red().bold());
+            println!(
+                "{}, {}",
+                first.truecolor(250, 169, 22).bold(),
+                "is past Due".red().bold()
+            );
         } else if conky {
             println!(
                 "${{#FAA916}}{},${{#FBFFFE}} ${{#FF0000}}is past Due${{#FBFFFE}}",
