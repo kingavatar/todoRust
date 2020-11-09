@@ -243,7 +243,7 @@ fn yes_or_no<S: ToString>(prompt: S) -> bool {
 // defaulting to no color output when not specified
 fn print_duration(duration: chrono::Duration, term: bool, conky: bool, first: &str) {
     if duration.num_days() >= 2 {
-        if term {
+        if term && !conky {
             println!(
                 "{}, {} {} {}",
                 first.truecolor(250, 169, 22).bold(),
@@ -269,7 +269,7 @@ fn print_duration(duration: chrono::Duration, term: bool, conky: bool, first: &s
             );
         }
     } else if duration.num_days() >= 1 {
-        if term {
+        if term && !conky{
             println!(
                 "{}, to be done {}",
                 first.truecolor(250, 169, 22).bold(),
@@ -284,7 +284,7 @@ fn print_duration(duration: chrono::Duration, term: bool, conky: bool, first: &s
             println!("{}, to be done Today", first);
         }
     } else {
-        if term {
+        if term && !conky{
             println!(
                 "{}, {}",
                 first.truecolor(250, 169, 22).bold(),
