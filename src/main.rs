@@ -89,9 +89,6 @@ fn main() {
         let first = splitter.next().unwrap();
         let second: String = splitter.next().unwrap().to_owned();
         let now = Utc::now();
-        // let date = Utc
-        //     .datetime_from_str(second.trim(), "%d %B, %I:%M %p %Y")
-        //     .unwrap();
         let datetime = DateTime::parse_from_rfc3339(second.trim()).unwrap();
         let date = datetime.with_timezone(&Utc);
         let duration = date - now;
@@ -134,7 +131,7 @@ fn get_events(events: &mut Vec<String>) {
 fn get_tasks(tasks: &mut Vec<String>) {
     let _file = std::fs::OpenOptions::new()
         .write(true)
-        .create_new(true)
+        .create(true)
         .open(&shellexpand::tilde("~/.tasks").to_string());
     let task_file = FileBuffer::open(&shellexpand::tilde("~/.tasks").to_string()).unwrap();
     let tasks_string = String::from_utf8(task_file[..].to_vec()).expect("not valid UTF-8");
@@ -142,31 +139,48 @@ fn get_tasks(tasks: &mut Vec<String>) {
     tasks.extend(list_of_tasks);
 }
 
+// Add tasks to .tasks file
 fn add_tasks(task: &str, deadline: &DateTime<chrono::FixedOffset>) {
     let file_path_str = shellexpand::tilde("~/.tasks").to_string();
-    let file_path = std::path::Path::new(&file_path_str);
-    let task_file = std::fs::File::create(file_path).unwrap();
+    let task_file = std::fs::OpenOptions::new()
+        .append(true)
+        .create(true)
+        .open(file_path_str)
+        .unwrap();
     let mut task_writer = BufWriter::new(task_file);
-    match write!(task_writer, "{},{}", task, deadline.to_rfc3339()) {
+    match writeln!(task_writer, "{},{}", task, deadline.to_rfc3339()) {
         Err(e) => println!("{:?}", e.to_string().red().bold()),
         _ => println!("{} {}", "Added task".bold(), task),
     };
 }
 
+// Add list of tasks to .tasks file
 fn add_tasks_list(tasks: &mut Vec<String>) {
     if tasks.len() == 0 {
         let now: DateTime<chrono::FixedOffset> = DateTime::from(Utc::now());
         add_tasks("", &now);
     }
+    let file_path_str = shellexpand::tilde("~/.tasks").to_string();
+    let task_file = std::fs::OpenOptions::new()
+        .append(true)
+        .create(true)
+        .open(file_path_str)
+        .unwrap();
+    let mut task_writer = BufWriter::new(task_file);
     for ele in tasks {
         let mut splitter = ele.splitn(2, ',');
         let task = splitter.next().unwrap();
         let deadline: String = splitter.next().unwrap().to_owned();
         let date: DateTime<chrono::FixedOffset> = DateTime::parse_from_rfc3339(deadline.trim())
             .expect("Wrong datetime Format not adding task");
-        add_tasks(&task, &date);
+        match writeln!(task_writer, "{},{}", task, date.to_rfc3339()) {
+            Err(e) => println!("{:?}", e.to_string().red().bold()),
+            _ => println!("{} {}", "Added task".bold(), task),
+        };
     }
 }
+
+// remove tasks from .tasks file
 fn remove_tasks(task: &str, tasks: &mut Vec<String>) {
     let idx = tasks
         .iter()
@@ -209,6 +223,7 @@ fn remove_tasks(task: &str, tasks: &mut Vec<String>) {
     }
 }
 
+// Yes or no prompt
 fn yes_or_no<S: ToString>(prompt: S) -> bool {
     let mut buf = String::new();
     print!(
@@ -223,6 +238,7 @@ fn yes_or_no<S: ToString>(prompt: S) -> bool {
         .expect("Could not get user input");
     buf.to_lowercase().trim() == "y"
 }
+
 // Prints the Acquired events in specified color format
 // defaulting to no color output when not specified
 fn print_duration(duration: chrono::Duration, term: bool, conky: bool, first: &str) {
@@ -285,6 +301,7 @@ fn print_duration(duration: chrono::Duration, term: bool, conky: bool, first: &s
     }
 }
 
+// Unit testing of above Code
 #[cfg(test)]
 mod tests {
     use super::*;
